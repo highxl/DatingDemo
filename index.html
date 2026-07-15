@@ -36,6 +36,8 @@
 
     html {
       -webkit-text-size-adjust: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     body {
@@ -44,6 +46,8 @@
       color: var(--ink);
       background: #ece8f4;
       overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .bg {
@@ -261,6 +265,11 @@
       align-items: center;
       justify-content: center;
       padding: max(1.5rem, env(safe-area-inset-top)) 1.25rem calc(2.5rem + var(--safe-bottom));
+    }
+
+    .page.scrollable {
+      align-items: flex-start;
+      justify-content: flex-start;
     }
 
     .shell {
@@ -608,20 +617,6 @@
       grid-template-columns: repeat(2, 1fr);
       gap: 0.75rem;
       margin-bottom: 1.25rem;
-      max-height: 340px;
-      overflow-y: auto;
-      padding-right: 2px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--rose) transparent;
-    }
-
-    .food-grid::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    .food-grid::-webkit-scrollbar-thumb {
-      background: var(--rose);
-      border-radius: 4px;
     }
 
     .food-card {
@@ -633,7 +628,7 @@
       cursor: pointer;
       text-align: center;
       transition: all 0.25s ease;
-      touch-action: manipulation;
+      touch-action: pan-y;
     }
 
     .food-card:hover {
@@ -1086,6 +1081,21 @@
 
     /* ── Responsive ── */
     @media (max-width: 480px) {
+      .page {
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding-top: max(1rem, env(safe-area-inset-top));
+        padding-bottom: calc(2rem + var(--safe-bottom));
+      }
+
+      .shell {
+        width: 100%;
+      }
+
+      .card-body {
+        padding: 1.25rem 1rem 1.5rem;
+      }
+
       .picker-grid {
         grid-template-columns: 1fr;
       }
@@ -1696,6 +1706,7 @@
     function openInvitation() {
       const envelope = document.getElementById("envelope");
       envelope.classList.add("open");
+      document.querySelector(".page").classList.add("scrollable");
       launchButterflyBurst("light");
 
       setTimeout(() => {
