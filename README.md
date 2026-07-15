@@ -37,24 +37,25 @@ const CONFIG = {
 5. **Branch** 选择 `main`，文件夹选择 `/ (root)`
 6. 保存后等待几分钟，访问 `https://你的用户名.github.io/仓库名/`
 
-## 邮件通知
+## 邮件通知（Web3Forms）
 
-胡蝶确认赴约后，选择内容会自动发送到你的邮箱（`CONFIG.notifyEmail`）。
+胡蝶确认赴约后，选择内容会自动发到你的邮箱。使用 [Web3Forms](https://web3forms.com)（免费，对 QQ 邮箱更友好）。
 
-**首次使用前必须激活：**
+### 配置步骤（约 1 分钟）
 
-1. 部署页面后，让胡蝶（或你自己测试）完成一次确认
-2. 邮箱会收到 FormSubmit 的激活邮件
-3. 点击邮件中的激活链接
-4. 激活后，之后的每次确认都会自动通知你
+1. 打开 https://web3forms.com
+2. 输入邮箱 `2013826057@qq.com`，点击 **Create Access Key**
+3. 去 QQ 邮箱查收 **Web3Forms 验证邮件**（可能在垃圾箱），点击验证链接
+4. 复制页面上的 **Access Key**
+5. 填入 `index.html` 的 `CONFIG.web3formsAccessKey`，同步到 `docs/index.html` 后推送
 
-邮件内容示例：
-
-| 字段 | 内容 |
-|------|------|
-| 回复人 | 胡蝶 |
-| 美食 | 🍰 甜品 |
-| 约会时间 | 2026 年 7 月 22 日（周三）下午 3:00 |
+```javascript
+const CONFIG = {
+  notifyEmail: "2013826057@qq.com",
+  web3formsAccessKey: "你的 Access Key",
+  // ...
+};
+```
 
 若邮件发送失败，成功页会显示「复制约会信息」按钮作为备用。
 
