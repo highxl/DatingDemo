@@ -272,6 +272,29 @@
       justify-content: flex-start;
     }
 
+    .page.cover-phase {
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+    }
+
+    .page.cover-phase .shell {
+      width: min(100%, 520px);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .page.cover-phase .cover:not(.hidden) {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      text-align: center;
+    }
+
     .shell {
       width: min(100%, 520px);
     }
@@ -1162,6 +1185,31 @@
       #actions-invite .btn-no {
         min-width: 112px;
       }
+
+      .page.scrollable {
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      .page.cover-phase {
+        padding: max(1.5rem, env(safe-area-inset-top)) 2rem calc(2.5rem + var(--safe-bottom));
+      }
+
+      .page.cover-phase .shell {
+        min-height: min(760px, calc(100dvh - 3rem));
+      }
+
+      .page.scrollable:not(.cover-phase):not(.one-screen) {
+        min-height: 100dvh;
+      }
+
+      .page.scrollable:not(.cover-phase):not(.one-screen) .shell {
+        min-height: calc(100dvh - 4rem);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin: 0 auto;
+      }
     }
 
     @media (min-width: 481px) and (max-width: 767px) {
@@ -1629,6 +1677,11 @@
         padding: max(1.5rem, env(safe-area-inset-top)) 2rem calc(2.5rem + var(--safe-bottom));
       }
 
+      .page.cover-phase .shell {
+        width: min(100%, 560px);
+        min-height: min(820px, calc(100dvh - 3rem));
+      }
+
       .shell {
         width: min(100%, 600px);
       }
@@ -1660,6 +1713,10 @@
     }
 
     @media (min-width: 1024px) {
+      .page.cover-phase .shell {
+        width: min(100%, 600px);
+      }
+
       .shell {
         width: min(100%, 680px);
       }
@@ -1902,13 +1959,14 @@
 
     function updateCoverPhase() {
       const coverVisible = !document.getElementById("cover").classList.contains("hidden");
-      document.querySelector(".page").classList.toggle("cover-phase", coverVisible && isMobileView());
+      document.querySelector(".page").classList.toggle("cover-phase", coverVisible);
     }
 
     function applyStepLayout(step) {
       const isCompactStep = step === "food" || step === "datetime";
       const isCompact = isCompactStep && isMobileView();
-      const needsScroll = step === "invite" || step === "success" || !isCompact;
+      const coverVisible = !document.getElementById("cover").classList.contains("hidden");
+      const needsScroll = !coverVisible && (step === "invite" || step === "success" || !isCompact);
 
       document.querySelector(".card").classList.toggle("compact", isCompact);
       document.querySelector(".page").classList.toggle("one-screen", isCompact);
@@ -2243,16 +2301,12 @@
     function openInvitation() {
       const envelope = document.getElementById("envelope");
       envelope.classList.add("open");
-      document.querySelector(".page").classList.add("scrollable");
-      document.querySelector(".card").classList.remove("compact");
-      document.querySelector(".page").classList.remove("one-screen");
-      updateCoverPhase();
       launchButterflyBurst("light");
 
       setTimeout(() => {
         document.getElementById("cover").classList.add("hidden");
         document.getElementById("card-wrap").classList.add("visible");
-        updateCoverPhase();
+        applyStepLayout(currentStep);
       }, 700);
     }
 

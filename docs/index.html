@@ -272,6 +272,29 @@
       justify-content: flex-start;
     }
 
+    .page.cover-phase {
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+    }
+
+    .page.cover-phase .shell {
+      width: min(100%, 520px);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .page.cover-phase .cover:not(.hidden) {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      text-align: center;
+    }
+
     .shell {
       width: min(100%, 520px);
     }
@@ -1158,6 +1181,35 @@
         min-height: 112px;
         min-width: 150px;
       }
+
+      #actions-invite .btn-no {
+        min-width: 112px;
+      }
+
+      .page.scrollable {
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      .page.cover-phase {
+        padding: max(1.5rem, env(safe-area-inset-top)) 2rem calc(2.5rem + var(--safe-bottom));
+      }
+
+      .page.cover-phase .shell {
+        min-height: min(760px, calc(100dvh - 3rem));
+      }
+
+      .page.scrollable:not(.cover-phase):not(.one-screen) {
+        min-height: 100dvh;
+      }
+
+      .page.scrollable:not(.cover-phase):not(.one-screen) .shell {
+        min-height: calc(100dvh - 4rem);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin: 0 auto;
+      }
     }
 
     @media (min-width: 481px) and (max-width: 767px) {
@@ -1625,6 +1677,11 @@
         padding: max(1.5rem, env(safe-area-inset-top)) 2rem calc(2.5rem + var(--safe-bottom));
       }
 
+      .page.cover-phase .shell {
+        width: min(100%, 560px);
+        min-height: min(820px, calc(100dvh - 3rem));
+      }
+
       .shell {
         width: min(100%, 600px);
       }
@@ -1656,6 +1713,10 @@
     }
 
     @media (min-width: 1024px) {
+      .page.cover-phase .shell {
+        width: min(100%, 600px);
+      }
+
       .shell {
         width: min(100%, 680px);
       }
@@ -1898,13 +1959,14 @@
 
     function updateCoverPhase() {
       const coverVisible = !document.getElementById("cover").classList.contains("hidden");
-      document.querySelector(".page").classList.toggle("cover-phase", coverVisible && isMobileView());
+      document.querySelector(".page").classList.toggle("cover-phase", coverVisible);
     }
 
     function applyStepLayout(step) {
       const isCompactStep = step === "food" || step === "datetime";
       const isCompact = isCompactStep && isMobileView();
-      const needsScroll = step === "invite" || step === "success" || !isCompact;
+      const coverVisible = !document.getElementById("cover").classList.contains("hidden");
+      const needsScroll = !coverVisible && (step === "invite" || step === "success" || !isCompact);
 
       document.querySelector(".card").classList.toggle("compact", isCompact);
       document.querySelector(".page").classList.toggle("one-screen", isCompact);
@@ -2239,16 +2301,12 @@
     function openInvitation() {
       const envelope = document.getElementById("envelope");
       envelope.classList.add("open");
-      document.querySelector(".page").classList.add("scrollable");
-      document.querySelector(".card").classList.remove("compact");
-      document.querySelector(".page").classList.remove("one-screen");
-      updateCoverPhase();
       launchButterflyBurst("light");
 
       setTimeout(() => {
         document.getElementById("cover").classList.add("hidden");
         document.getElementById("card-wrap").classList.add("visible");
-        updateCoverPhase();
+        applyStepLayout(currentStep);
       }, 700);
     }
 
@@ -2376,6 +2434,29 @@
         positioned = true;
       }
 
+      function pickFleePosition(relX, relY, btnW, btnH, pad, maxX, maxY) {
+        const grid = window.innerWidth < 480 ? 5 : 4;
+        const candidates = [];
+
+        for (let i = 0; i < grid; i++) {
+          for (let j = 0; j < grid; j++) {
+            const ratioX = grid === 1 ? 0.5 : i / (grid - 1);
+            const ratioY = grid === 1 ? 0.5 : j / (grid - 1);
+            const x = pad + Math.max(0, maxX - pad) * ratioX;
+            const y = pad + Math.max(0, maxY - pad) * ratioY;
+            const dist = Math.hypot(
+              relX - (x + btnW / 2),
+              relY - (y + btnH / 2)
+            );
+            candidates.push({ x, y, dist });
+          }
+        }
+
+        candidates.sort((a, b) => b.dist - a.dist);
+        const pool = candidates.slice(0, Math.min(4, candidates.length));
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+
       function fleeAway(clientX, clientY) {
         const zoneRect = fleeZone.getBoundingClientRect();
         const relX = clientX - zoneRect.left;
@@ -2388,35 +2469,30 @@
         const centerX = absX + btnW / 2;
         const centerY = absY + btnH / 2;
         const dist = Math.hypot(relX - centerX, relY - centerY);
-        const threshold = window.innerWidth < 480 ? 72 : 120;
+        const threshold = window.innerWidth < 480 ? 58 : 96;
 
         if (dist > threshold || fleeing) return;
 
         fleeing = true;
 
-        const pad = 4;
-        const maxX = fleeZone.offsetWidth - btnW - pad;
-        const maxY = fleeZone.offsetHeight - btnH - pad;
+        const pad = 6;
+        const maxX = Math.max(pad, fleeZone.offsetWidth - btnW - pad);
+        const maxY = Math.max(pad, fleeZone.offsetHeight - btnH - pad);
+        const target = pickFleePosition(relX, relY, btnW, btnH, pad, maxX, maxY);
 
-        const angle = Math.atan2(centerY - relY, centerX - relX);
-        const push = window.innerWidth < 480 ? 34 : 58;
-        let newX = absX + Math.cos(angle) * push + (Math.random() - 0.5) * 12;
-        let newY = absY + Math.sin(angle) * push + (Math.random() - 0.5) * 10;
+        absX = target.x;
+        absY = target.y;
 
-        if (Math.hypot(newX - absX, newY - absY) < 20) {
-          newX = pad + Math.random() * Math.max(maxX - pad, 0);
-          newY = pad + Math.random() * Math.max(maxY - pad, 0);
-        }
-
-        absX = Math.max(pad, Math.min(maxX, newX));
-        absY = Math.max(pad, Math.min(maxY, newY));
-
+        btnNo.classList.add("dodging");
         btnNo.style.left = absX + "px";
         btnNo.style.top = absY + "px";
         btnNo.textContent = messages[msgIndex % messages.length];
         msgIndex++;
 
-        setTimeout(() => { fleeing = false; }, 560);
+        setTimeout(() => {
+          fleeing = false;
+          btnNo.classList.remove("dodging");
+        }, 440);
       }
 
       fleeZone.addEventListener("mousemove", (e) => fleeAway(e.clientX, e.clientY));
